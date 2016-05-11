@@ -1,7 +1,8 @@
 ---
 title: "MATH 216 Homework 5"
-author: "WRITE YOUR NAME HERE"
+author: "Carter \"CartR\" Merenstein"
 output: html_document
+runtime: shiny
 ---
 
 
@@ -9,12 +10,14 @@ output: html_document
 
 Please indicate
 
-* Who you collaborated with:
-* Roughly how much time you spent on this HW:
-* What gave you the most trouble:
+* Who you collaborated with: No one
+* Roughly how much time you spent on this HW: 1.5 hr
+* What gave you the most trouble: I still don't know how to upload to shiny server
 * Any comments you have: 
 
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 
 
@@ -28,7 +31,7 @@ a "single-file" Shiny app based on file `App.R`
 * Install all necessary packages on your Middlebury Shiny server account
 following the instructions given in Lec16 Shiny.
 * Upload your app to the Middlebury Shiny server and replace the NHL link with
-the link for your app [here](https://www.nhl.com/), so that when you Knit the 
+the link for your app [here](https://shiny.middlebury.edu:3838/cmerenstein/hw-5/), so that when you Knit the 
 document a working hyperlink shows.
 
 Hints:
@@ -40,15 +43,79 @@ people spinning their wheels on this HW this late in the semester.
 * Consider using `if` and `else` statements to switch out which text to show the
 wordcloud for. Note this isn't the only way to do this. Ex:
 
-```{r}
-text <- "blah2"
-if(text == "blah1"){
-  value <- 1
-} else if (text == "blah2"){
-  value <- 2
-} else if (text == "blah3"){
-  value <- 3
+
+```{r, echo=FALSE}
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(tm))
+suppressPackageStartupMessages(library(wordcloud))
+suppressPackageStartupMessages(library(SnowballC))
+suppressPackageStartupMessages(library(shiny))
+
+filter_books <- function(book){
+  trimmmed <- book %>%
+  tolower() %>%
+  removeNumbers() %>%
+  removePunctuation() %>%
+  removeWords(stopwords("english")) %>% 
+  stripWhitespace()
+  return(trimmmed)
 }
-value
+
+
+
+Anne_of_Green_Gables <-
+  readLines("pg45.txt", encoding="UTF-8") %>%
+  as.character()
+
+Anne_of_Avonlea <-
+  readLines("pg47.txt", encoding="UTF-8") %>%
+  as.character()
+
+Anne_of_the_Island <-
+  readLines("pg51.txt", encoding="UTF-8") %>%
+  as.character()
+
+#some sort of foreach would be helpful, I could put them in a vector
+
+Anne_of_Green_Gables <- filter_books(Anne_of_Green_Gables)
+
+Anne_of_Avonlea <- filter_books(Anne_of_Avonlea)
+
+Anne_of_the_Island <- filter_books(Anne_of_the_Island)
+
+GG <- VectorSource(Anne_of_Green_Gables) %>% 
+  Corpus()
+
+A <- VectorSource(Anne_of_Avonlea) %>% 
+  Corpus()
+
+tI <- VectorSource(Anne_of_the_Island) %>% 
+  Corpus()
+
+```
+
+```{r eruptions, echo=FALSE}
+inputPanel(
+  selectInput("book", label = "Chose Book:",
+              choices = c("Anne of Green Gables", "Anne of Avonlea", "Anne of the Island"), selected = "Anne of Green Gables")
+  
+)
+
+renderPlot({
+  if(input$book == "Anne of Green Gables") {
+    wordcloud(GG, scale=c(5,0.5), max.words=25, random.order=FALSE,
+          rot.per=0.35, use.r.layout=FALSE, colors=brewer.pal(8, "BuPu"))
+} else if (input$book == "Anne of Avonlea") {
+    wordcloud(A, scale=c(5,0.5), max.words=25, random.order=FALSE,
+          rot.per=0.35, use.r.layout=FALSE, colors=brewer.pal(8, "BuPu"))
+} else {
+  wordcloud(tI, scale=c(5,0.5), max.words=25, random.order=FALSE,
+          rot.per=0.35, use.r.layout=FALSE, colors=brewer.pal(8, "BuPu"))
+}
+})
+
+#This is slow, because it draws the wordcloud again every time.
+#I can't figure out how to save wordclouds, or I really just don't have the patience to.
 ```
 
